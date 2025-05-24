@@ -1,0 +1,2 @@
+ajoute ce fichier à mon projet juste en dessous du dossier racine: bjjj.js
+aller les bleu

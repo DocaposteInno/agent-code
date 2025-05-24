@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Explorateur IA</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    .container { max-width: 1000px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; }
+    input, textarea, button {
+      padding: 10px; font-size: 1em; margin-bottom: 10px; width: 100%;
+    }
+    button { background: #3498db; color: white; border: none; cursor: pointer; }
+    button:hover { background: #2980b9; }
+    ul { list-style-type: none; padding-left: 20px; }
+    li { cursor: pointer; }
+    .file { color: #2c3e50; }
+    .folder { font-weight: bold; color: #e67e22; }
+    .hidden { display: none; }
+    pre { white-space: pre-wrap; background: #ecf0f1; padding: 10px; border-radius: 5px; }
+    .tab-btn {
+      background: #eee; color: #333; border: none; padding: 8px 16px; border-radius: 6px 6px 0 0; cursor:pointer;
+    }
+    .tab-btn.active {
+      background: #3498db; color: #fff;
+    }
+    .tab-content { border:1px solid #ccc; border-top:none; border-radius:0 0 8px 8px; background:#f4f4f4; padding:10px; min-height:60px;}
+    /* Style ChatGPT-like pour la réponse */
+    #llmChatReponseTab {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      padding: 18px 20px;
+      margin: 10px 0;
+      font-size: 1.08em;
+      color: #222;
+      font-family: 'Fira Mono', 'Consolas', 'Menlo', monospace;
+      line-height: 1.6;
+      min-height: 60px;
+      border: 1px solid #e0e0e0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    #llmChatReponseTab b {
+      color: #3498db;
+      font-family: inherit;
+    }
+    #llmChatReponseTab pre {
+      background: #f6f8fa;
+      border-radius: 6px;
+      padding: 10px;
+      margin: 10px 0;
+      font-family: 'Fira Mono', 'Consolas', 'Menlo', monospace;
+      font-size: 1em;
+      color: #222;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🗂️ Explorateur IA</h1>
+    <input type="text" id="path" placeholder="/chemin/vers/projet">
+    <hr>
+    <label for="fileUpload">📎 Uploader un fichier ou un projet compressé (.zip) :</label>
+    <input type="file" id="fileUpload" onchange="uploadFile()" webkitdirectory directory multiple />
+    <button id="exploreUploadedBtn" style="display:none;" onclick="loadUploadedTree()">Explorer le projet uploadé</button>
+    <button onclick="loadTree()">Explorer</button>
+
+    <div id="treeDisplay"></div>
+    <pre id="fileContent"></pre>
+    <button onclick="explainFile()" id="explainBtn" style="display:none;">🧠 Expliquer ce fichier avec l’IA</button>
+    <pre id="explanationOutput"></pre>
+
+   
+  </div>
+
+  <!-- Zone de chat LLM avec onglets -->
+  <div style="margin-top:40px; border-top:1px solid #ccc; padding-top:20px;">
+    <h2>💬 Discuter avec l’IA</h2>
+    <form id="llmChatForm" onsubmit="return sendChatMessage(event);">
+      <textarea id="llmChatInput" rows="3" placeholder="Posez une question à l’IA..." style="width:100%;"></textarea>
+      <button type="submit" style="margin-top:10px;">Envoyer</button>
+    </form>
+    <div style="margin-top:20px;">
+      <button type="button" id="tabChat" class="tab-btn active" onclick="showTab('chat')">Historique</button>
+      <button type="button" id="tabReponse" class="tab-btn" onclick="showTab('reponse')">Dernière réponse</button>
+    </div>
+    <div id="llmChatTabs" class="tab-content">
+      <div id="llmChatHistoryTab"></div>
+      <div id="llmChatReponseTab" style="display:none;"></div>
+    </div>
+  </div>
+
+  <script>
+    let searchQuery = "";
+    let currentFileContent = "";
+
+    async function loadTree() {
+      const path = document.getElementById("path").value;
+      const res = await fetch('/explore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectPath: path })
+      });
+      const tree = await res.json();
+      document.getElementById('treeDisplay').innerHTML = '';
+      renderTree(tree, document.getElementById('treeDisplay'));
+    }
+
+    function renderTree(node, container) {
+      if (!matchSearch(node)) return;
+
+      const ul = document.createElement('ul');
+      const li = document.createElement('li');
+
+      if (node.type === 'directory') {
+        li.innerHTML = `<span class="folder">📁 ${node.name}</span>`;
+        li.onclick = function (e) {
+          e.stopPropagation();
+          const children = this.querySelector('ul');
+          if (children) children.classList.toggle('hidden');
+        };
+
+        if (node.children) {
+          const childContainer = document.createElement('ul');
+          node.children.forEach(child => renderTree(child, childContainer));
+          if (childContainer.childNodes.length > 0) {
+            li.appendChild(childContainer);
+            ul.appendChild(li);
+            container.appendChild(ul);
+          }
+        }
+      } else {
+        li.innerHTML = `<span class="file">📄 ${node.name}</span>`;
+        li.onclick = function (e) {
+          e.stopPropagation();
+          document.getElementById('fileContent').textContent = node.content || "(Fichier vide)";
+          document.getElementById('editPath').value = node.path;
+          document.getElementById('editContent').value = node.content || '';
+          document.getElementById('explainBtn').style.display = 'inline-block';
+          document.getElementById('explanationOutput').textContent = '';
+          currentFileContent = node.content || '';
+        };
+        ul.appendChild(li);
+        container.appendChild(ul);
+      }
+    }
+
+    function matchSearch(node) {
+      if (!searchQuery) return true;
+      return node.name.toLowerCase().includes(searchQuery.toLowerCase());
+    }
+
+    function filterTree() {
+      searchQuery = document.getElementById("searchInput").value;
+      loadTree();
+    }
+
+    async function createFile() {
+      const filePath = document.getElementById('createPath').value;
+      const content = '';
+      const res = await fetch('/create-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filePath, content })
+      });
+      const data = await res.json();
+      alert(data.message || data.error);
+      loadTree();
+    }
+
+    async function editFile() {
+      const filePath = document.getElementById('editPath').value;
+      const content = document.getElementById('editContent').value;
+      const res = await fetch('/edit-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filePath, content })
+      });
+      const data = await res.json();
+      alert(data.message || data.error);
+      loadTree();
+    }
+
+    async function deleteFile() {
+      const filePath = document.getElementById('deletePath').value;
+      if (!filePath) return alert("Chemin requis !");
+      const res = await fetch('/delete-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filePath })
+      });
+      const data = await res.json();
+      alert(data.message || data.error);
+      loadTree();
+    }
+
+    async function renameFile() {
+      const oldPath = document.getElementById('oldPath').value;
+      const newPath = document.getElementById('newPath').value;
+      const res = await fetch('/rename-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldPath, newPath })
+      });
+      const data = await res.json();
+      alert(data.message || data.error);
+      loadTree();
+    }
+
+    async function explainFile() {
+      if (!currentFileContent) return;
+
+      const res = await fetch('/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: `Explique ce code en français simplement. Si possible, donne des exemples ou des pièges à éviter :\n\n${currentFileContent}`
+        })
+      });
+
+      const data = await res.json();
+      document.getElementById('explanationOutput').textContent = data.answer || data.error;
+    }
+
+    let lastUploadedPath = "";
+
+    async function uploadFile() {
+      const fileInput = document.getElementById('fileUpload');
+      const files = fileInput.files;
+      if (!files.length) {
+        alert("Aucun fichier sélectionné.");
+        return;
+      }
+
+      const formData = new FormData();
+      for (const file of files) {
+        // On garde le chemin relatif du fichier dans le dossier
+        formData.append('projectFiles', file, file.webkitRelativePath || file.name);
+      }
+
+      const res = await fetch('/upload-folder', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+
+      if (data.projectPath) {
+        document.getElementById('path').value = data.projectPath;
+        alert("✅ Dossier uploadé avec succès !");
+        loadTree();
+      } else {
+        alert(data.error || 'Erreur lors de l’upload');
+      }
+    }
+
+    async function loadUploadedTree() {
+      if (!lastUploadedPath) {
+        alert("Aucun projet uploadé");
+        return;
+      }
+
+      const res = await fetch('/explore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectPath: lastUploadedPath })
+      });
+
+      const tree = await res.json();
+      document.getElementById('treeDisplay').innerHTML = '';
+      renderTree(tree, document.getElementById('treeDisplay'));
+    }
+
+    // Onglets pour la zone de chat LLM
+    function showTab(tab) {
+      document.getElementById('tabChat').classList.toggle('active', tab === 'chat');
+      document.getElementById('tabReponse').classList.toggle('active', tab === 'reponse');
+      document.getElementById('llmChatHistoryTab').style.display = tab === 'chat' ? '' : 'none';
+      document.getElementById('llmChatReponseTab').style.display = tab === 'reponse' ? '' : 'none';
+    }
+    showTab('chat');
+
+    async function sendChatMessage(event) {
+      if (event) event.preventDefault(); // Empêche le rechargement de la page
+
+      const input = document.getElementById('llmChatInput');
+      const history = document.getElementById('llmChatHistoryTab');
+      const reponse = document.getElementById('llmChatReponseTab');
+      const question = input.value.trim();
+      if (!question) return false;
+
+      // Affiche la question dans l'historique
+      history.innerHTML += `<div><b>Vous :</b> ${question}</div>`;
+
+      input.value = '';
+      try {
+        const res = await fetch('/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question })
+        });
+        const data = await res.json();
+
+        // Tente de parser la réponse comme JSON d'action
+        let actionObj = null;
+        try {
+          // Extrait le JSON même s'il est entouré de balises ```json ... ```
+          const match = data.answer.match(/```json\s*([\s\S]*?)```/i) || data.answer.match(/```([\s\S]*?)```/i);
+          const jsonStr = match ? match[1] : data.answer;
+          actionObj = JSON.parse(jsonStr);
+        } catch {}
+
+        if (actionObj && actionObj.action === "batch") {
+          await fetch('/batch-files', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              create: actionObj.create || [],
+              delete: actionObj.delete || []
+            })
+          });
+          alert("Batch de fichiers traité !");
+          loadTree();
+          history.innerHTML += `<div><b>IA (action):</b> ${JSON.stringify(actionObj)}</div>`;
+        } else if (actionObj && actionObj.action === "create-file") {
+          await fetch('/create-file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filePath: actionObj.filePath, content: actionObj.content || "" })
+          });
+          alert("Fichier créé !");
+          loadTree();
+          history.innerHTML += `<div><b>IA (action):</b> ${data.answer}</div>`;
+        } else if (actionObj && actionObj.action === "edit-file") {
+          await fetch('/edit-file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filePath: actionObj.filePath, content: actionObj.content || "" })
+          });
+          alert("Fichier modifié !");
+          loadTree();
+          history.innerHTML += `<div><b>IA (action):</b> ${data.answer}</div>`;
+        } else if (actionObj && actionObj.action === "delete-file") {
+          await fetch('/delete-file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filePath: actionObj.filePath })
+          });
+          alert("Fichier supprimé !");
+          loadTree();
+          history.innerHTML += `<div><b>IA (action):</b> ${data.answer}</div>`;
+        } else {
+          // Réponse normale
+          history.innerHTML += `<div><b>IA :</b> ${data.answer || data.error}</div>`;
+          reponse.innerHTML = `<b>Dernière réponse de l'IA :</b>
+            <div style="margin-top:10px;">${
+              (data.answer || data.error)
+                .replace(/```([\s\S]*?)```/g, '<pre>$1</pre>')
+                .replace(/\n/g, '<br>')
+            }</div>`;
+        }
+        history.scrollTop = history.scrollHeight;
+        showTab('reponse');
+      } catch (e) {
+        history.innerHTML += `<div style="color:red;"><b>Erreur :</b> ${e.message}</div>`;
+        reponse.innerHTML = `<div style="color:red;"><b>Erreur :</b> ${e.message}</div>`;
+      }
+      return false; // Empêche le rechargement du formulaire
+    }
+  </script>
+</body>
+</html>
