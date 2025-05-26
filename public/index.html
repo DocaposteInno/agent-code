@@ -61,11 +61,13 @@
     <h1>🗂️ Explorateur IA</h1>
     <input type="text" id="path" placeholder="/chemin/vers/projet">
     <hr>
-    <label for="fileUpload">📎 Uploader un fichier ou un projet compressé (.zip) :</label>
-    <input type="file" id="fileUpload" onchange="uploadFile()" webkitdirectory directory multiple />
-    <button id="exploreUploadedBtn" style="display:none;" onclick="loadUploadedTree()">Explorer le projet uploadé</button>
-    <button onclick="loadTree()">Explorer</button>
+        <button onclick="loadTree()">Explorer</button>
+        <h3>Télécharger un projet GitHub</h3>
+<input type="text" id="githubUrl" placeholder="https://github.com/user/repo">
+<button onclick="downloadFromGitHub()">Télécharger et explorer</button>
 
+    <input type="file" id="fileUpload" onchange="uploadFile()" webkitdirectory directory multiple />
+    
     <div id="treeDisplay"></div>
     <pre id="fileContent"></pre>
     <button onclick="explainFile()" id="explainBtn" style="display:none;">🧠 Expliquer ce fichier avec l’IA</button>
@@ -89,12 +91,16 @@
       <div id="llmChatHistoryTab"></div>
       <div id="llmChatReponseTab" style="display:none;"></div>
     </div>
+
+
   </div>
 
   <script>
     let searchQuery = "";
     let currentFileContent = "";
 
+
+    // envoie requete explorer pour charger l'arborescence du projet
     async function loadTree() {
       const path = document.getElementById("path").value;
       const res = await fetch('/explore', {
@@ -368,6 +374,34 @@
       }
       return false; // Empêche le rechargement du formulaire
     }
+
+    // Telecharger un projet GitHub
+   async function downloadFromGitHub() {
+  const githubUrl = document.getElementById('githubUrl').value;
+  if (!githubUrl) return alert("Merci d'entrer un lien GitHub.");
+
+  const res = await fetch('/github-download', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ githubUrl })
+  });
+
+  const data = await res.json();
+
+  if (data.projectPath) {
+    // ✅ Met à jour le champ de chemin
+    document.getElementById('path').value = data.projectPath;
+
+    // ✅ Affiche un popup de confirmation avec le chemin temporaire
+    alert(`✅ Projet téléchargé avec succès dans :\n${data.projectPath}`);
+
+    // ✅ Lance l'exploration
+    loadTree();
+  } else {
+    alert(data.error || 'Erreur lors du téléchargement GitHub');
+  }
+}
+
   </script>
 </body>
 </html>

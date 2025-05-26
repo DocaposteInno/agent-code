@@ -293,6 +293,31 @@ app.post('/batch-files', (req, res) => {
 
   res.json(results);
 });
+import { exec } from 'child_process';
+
+// 📥 Endpoint pour télécharger un repo GitHub
+app.post('/github-download', (req, res) => {
+  const { githubUrl } = req.body;
+
+  if (!githubUrl) return res.status(400).json({ error: 'githubUrl requis' });
+
+  // Définir un chemin temporaire
+  const folderName = `repo_${Date.now()}`;
+  const targetPath = path.join(os.tmpdir(), folderName);
+
+  // Commande git clone
+  const command = `git clone ${githubUrl} ${targetPath}`;
+
+  exec(command, (err, stdout, stderr) => {
+    if (err) {
+      console.error('Erreur lors du téléchargement GitHub:', stderr);
+      return res.status(500).json({ error: `Erreur lors du téléchargement : ${stderr}` });
+    }
+
+    console.log('Téléchargement réussi dans :', targetPath);
+    return res.json({ projectPath: targetPath });
+  });
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

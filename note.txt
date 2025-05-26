@@ -1,2 +1,10 @@
-ajoute ce fichier à mon projet juste en dessous du dossier racine: bjjj.js
-aller les bleu
+Le fichier `treeFormatter.js` contient une fonction `formatTreeAsText` qui prend un nœud d'arborescence et un préfixe en entrée, et retourne 
+une représentation textuelle de l'arborescence. Chaque nœud est représenté par une icône (📁 pour les répertoires et 📄 pour les fichiers)
+suivie du nom du nœud. Si le nœud est un répertoire, la fonction est appelée récursivement pour chacun de ses enfants, en ajoutant des préfixes
+pour indiquer la structure hiérarchique.
+
+Le fichier `explorer.js` contient une fonction `getDirectoryTree` qui prend un chemin cible en entrée et retourne un objet représentant 
+l'arborescence du répertoire. La fonction vérifie si le chemin cible est un répertoire ou un fichier. Pour un répertoire, elle liste 
+ses enfants (en excluant `node_modules` et `.git`) et appelle récursivement `getDirectoryTree` pour chaque enfant. Pour un fichier, 
+elle lit son contenu en texte brut. L'objet retourné contient le chemin, le nom, le type (répertoire ou fichier), et éventuellement 
+le contenu pour les fichiers.
