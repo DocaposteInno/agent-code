@@ -4,96 +4,145 @@
   <meta charset="UTF-8" />
   <title>Explorateur IA</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
-    .container { max-width: 1000px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; }
-    input, textarea, button {
-      padding: 10px; font-size: 1em; margin-bottom: 10px; width: 100%;
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f9f9f9;
     }
-    button { background: #3498db; color: white; border: none; cursor: pointer; }
-    button:hover { background: #2980b9; }
-    ul { list-style-type: none; padding-left: 20px; }
-    li { cursor: pointer; }
-    .file { color: #2c3e50; }
-    .folder { font-weight: bold; color: #e67e22; }
-    .hidden { display: none; }
-    pre { white-space: pre-wrap; background: #ecf0f1; padding: 10px; border-radius: 5px; }
-    .tab-btn {
-      background: #eee; color: #333; border: none; padding: 8px 16px; border-radius: 6px 6px 0 0; cursor:pointer;
-    }
-    .tab-btn.active {
-      background: #3498db; color: #fff;
-    }
-    .tab-content { border:1px solid #ccc; border-top:none; border-radius:0 0 8px 8px; background:#f4f4f4; padding:10px; min-height:60px;}
-    /* Style ChatGPT-like pour la réponse */
-    #llmChatReponseTab {
+    .container {
+      max-width: 1000px;
+      margin: auto;
       background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      padding: 18px 20px;
-      margin: 10px 0;
-      font-size: 1.08em;
-      color: #222;
-      font-family: 'Fira Mono', 'Consolas', 'Menlo', monospace;
-      line-height: 1.6;
-      min-height: 60px;
-      border: 1px solid #e0e0e0;
-      white-space: pre-wrap;
-      word-break: break-word;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
-    #llmChatReponseTab b {
+    h1 {
       color: #3498db;
-      font-family: inherit;
+      text-align: center;
     }
-    #llmChatReponseTab pre {
+    input, textarea, button {
+      padding: 10px;
+      font-size: 1em;
+      margin-bottom: 10px;
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    button {
+      background: #3498db;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #ddd;
+      margin: 20px 0;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    .tree-display {
       background: #f6f8fa;
       border-radius: 6px;
       padding: 10px;
-      margin: 10px 0;
       font-family: 'Fira Mono', 'Consolas', 'Menlo', monospace;
-      font-size: 1em;
+      font-size: 0.9em;
       color: #222;
       overflow-x: auto;
+    }
+    .tab-btn {
+      background: #eee;
+      color: #333;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: #3498db;
+      color: #fff;
+    }
+    .tab-content {
+      border: 1px solid #ccc;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      background: #f4f4f4;
+      padding: 10px;
+      min-height: 60px;
+    }
+    pre {
+      white-space: pre-wrap;
+      background: #ecf0f1;
+      padding: 10px;
+      border-radius: 5px;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>🗂️ Explorateur IA</h1>
-    <input type="text" id="path" placeholder="/chemin/vers/projet">
-    <hr>
-        <button onclick="loadTree()">Explorer</button>
-        <h3>Télécharger un projet GitHub</h3>
-<input type="text" id="githubUrl" placeholder="https://github.com/user/repo">
-<button onclick="downloadFromGitHub()">Télécharger et explorer</button>
 
-    <input type="file" id="fileUpload" onchange="uploadFile()" webkitdirectory directory multiple />
-    
-    <div id="treeDisplay"></div>
-    <pre id="fileContent"></pre>
-    <button onclick="explainFile()" id="explainBtn" style="display:none;">🧠 Expliquer ce fichier avec l’IA</button>
-    <pre id="explanationOutput"></pre>
-
-   
-  </div>
-
-  <!-- Zone de chat LLM avec onglets -->
-  <div style="margin-top:40px; border-top:1px solid #ccc; padding-top:20px;">
-    <h2>💬 Discuter avec l’IA</h2>
-    <form id="llmChatForm" onsubmit="return sendChatMessage(event);">
-      <textarea id="llmChatInput" rows="3" placeholder="Posez une question à l’IA..." style="width:100%;"></textarea>
-      <button type="submit" style="margin-top:10px;">Envoyer</button>
-    </form>
-    <div style="margin-top:20px;">
-      <button type="button" id="tabChat" class="tab-btn active" onclick="showTab('chat')">Historique</button>
-      <button type="button" id="tabReponse" class="tab-btn" onclick="showTab('reponse')">Dernière réponse</button>
-    </div>
-    <div id="llmChatTabs" class="tab-content">
-      <div id="llmChatHistoryTab"></div>
-      <div id="llmChatReponseTab" style="display:none;"></div>
+    <!-- Section pour explorer un projet -->
+    <div class="section">
+      <h3>Explorer un projet</h3>
+      <input type="text" id="path" placeholder="/chemin/vers/projet">
+      <button onclick="loadTree()">Explorer</button>
     </div>
 
+    <!-- Section pour explorer un deuxième projet -->
+    <div class="section">
+      <h3>Explorer un deuxième projet</h3>
+      <input type="text" id="secondPath" placeholder="/chemin/vers/deuxieme/projet">
+      <button onclick="loadSecondTree()">Explorer le deuxième projet</button>
+    </div>
 
+    <!-- Section pour télécharger un projet GitHub -->
+    <div class="section">
+      <h3>Télécharger un projet GitHub</h3>
+      <input type="text" id="githubUrl" placeholder="https://github.com/user/repo">
+      <button onclick="downloadFromGitHub()">Télécharger et explorer</button>
+    </div>
+
+    <!-- Affichage des arborescences -->
+    <div class="section">
+      <h3>Arborescence du projet principal :</h3>
+      <div id="treeDisplay" class="tree-display"></div>
+    </div>
+    <div class="section">
+      <h3>Arborescence du deuxième projet :</h3>
+      <div id="secondTreeDisplay" class="tree-display"></div>
+    </div>
+
+    <!-- Zone de chat avec l'IA -->
+    <div class="section">
+      <h2>💬 Discuter avec l’IA</h2>
+      <form id="llmChatForm" onsubmit="return sendChatMessage(event);">
+        <textarea id="llmChatInput" rows="3" placeholder="Posez une question à l’IA..."></textarea>
+        <button type="submit">Envoyer</button>
+      </form>
+      <div style="margin-top:20px;">
+        <button type="button" id="tabChat" class="tab-btn active" onclick="showTab('chat')">Historique</button>
+        <button type="button" id="tabReponse" class="tab-btn" onclick="showTab('reponse')">Dernière réponse</button>
+      </div>
+      <div id="llmChatTabs" class="tab-content">
+        <div id="llmChatHistoryTab"></div>
+        <div id="llmChatReponseTab" style="display:none;"></div>
+      </div>
+    </div>
   </div>
+
+ <!--boutton doc--> 
+   <div class="section">
+  <h3>Créer une documentation d'utilisation (install.md)</h3>
+  <button onclick="createInstallDoc()">Créer install.md</button>
+</div>
+
 
   <script>
     let searchQuery = "";
@@ -112,45 +161,68 @@
       document.getElementById('treeDisplay').innerHTML = '';
       renderTree(tree, document.getElementById('treeDisplay'));
     }
+    async function loadSecondTree() {
+  const path = document.getElementById("secondPath").value.trim();
+  if (!path) {
+    alert("Veuillez entrer un chemin valide pour le deuxième projet.");
+    return;
+  }
+
+  const res = await fetch('/explore', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ projectPath: path })
+  });
+
+  const tree = await res.json();
+  document.getElementById('secondTreeDisplay').innerHTML = '';
+  renderTree(tree, document.getElementById('secondTreeDisplay'));
+}
 
     function renderTree(node, container) {
-      if (!matchSearch(node)) return;
+  if (!matchSearch(node)) return;
 
-      const ul = document.createElement('ul');
-      const li = document.createElement('li');
+  const ul = document.createElement('ul');
+  const li = document.createElement('li');
 
-      if (node.type === 'directory') {
-        li.innerHTML = `<span class="folder">📁 ${node.name}</span>`;
-        li.onclick = function (e) {
-          e.stopPropagation();
-          const children = this.querySelector('ul');
-          if (children) children.classList.toggle('hidden');
-        };
+  if (node.type === 'directory') {
+    li.innerHTML = `<span class="folder">📁 ${node.name}</span>`;
+    li.onclick = function (e) {
+      e.stopPropagation();
+      const children = this.querySelector('ul');
+      if (children) children.classList.toggle('hidden');
+    };
 
-        if (node.children) {
-          const childContainer = document.createElement('ul');
-          node.children.forEach(child => renderTree(child, childContainer));
-          if (childContainer.childNodes.length > 0) {
-            li.appendChild(childContainer);
-            ul.appendChild(li);
-            container.appendChild(ul);
-          }
-        }
-      } else {
-        li.innerHTML = `<span class="file">📄 ${node.name}</span>`;
-        li.onclick = function (e) {
-          e.stopPropagation();
-          document.getElementById('fileContent').textContent = node.content || "(Fichier vide)";
-          document.getElementById('editPath').value = node.path;
-          document.getElementById('editContent').value = node.content || '';
-          document.getElementById('explainBtn').style.display = 'inline-block';
-          document.getElementById('explanationOutput').textContent = '';
-          currentFileContent = node.content || '';
-        };
+    if (node.children) {
+      const childContainer = document.createElement('ul');
+      node.children.forEach(child => renderTree(child, childContainer));
+      if (childContainer.childNodes.length > 0) {
+        li.appendChild(childContainer);
         ul.appendChild(li);
         container.appendChild(ul);
       }
     }
+  } else {
+    li.innerHTML = `<span class="file">📄 ${node.name}</span>`;
+    li.onclick = async function (e) {
+      e.stopPropagation();
+      try {
+        const res = await fetch('/explore-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filePath: node.path })
+        });
+        const data = await res.json();
+        document.getElementById('fileContent').textContent = data.content || "(Fichier vide)";
+      } catch (error) {
+        console.error("Erreur lors de l'affichage du contenu du fichier :", error);
+        alert("Impossible de charger le contenu du fichier.");
+      }
+    };
+    ul.appendChild(li);
+    container.appendChild(ul);
+  }
+}
 
     function matchSearch(node) {
       if (!searchQuery) return true;
@@ -402,6 +474,38 @@
   }
 }
 
+// requete pour créer la documentation d'utilisation install.md
+async function createInstallDoc() {
+  const question = "Crée une documentation d'utilisation install.md pour ce projet.";
+  
+  try {
+    const res = await fetch('/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question })
+    });
+
+    const data = await res.json();
+    const actionObj = JSON.parse(data.answer);
+
+    if (actionObj.action === "create-file") {
+      await fetch('/create-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filePath: actionObj.filePath,
+          content: actionObj.content
+        })
+      });
+      alert(`Fichier ${actionObj.filePath} créé avec succès !`);
+    } else {
+      alert("Erreur : L'IA n'a pas répondu avec une action de création de fichier.");
+    }
+  } catch (e) {
+    console.error("Erreur lors de la création de install.md :", e);
+    alert("Une erreur est survenue.");
+  }
+}
   </script>
 </body>
 </html>
