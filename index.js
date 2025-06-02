@@ -55,6 +55,10 @@ ${combinedTreeJson}
 
 Règle ABSOLUE :
 - Si l'utilisateur te demande de créer une documentation d'utilisation (ex: install.md), tu dois générer un fichier markdown complet qui explique comment installer, configurer et lancer le projet sur une machine.
+- Si l'utilisateur te demande de créer, modifier, renommer ou supprimer un fichier/dossier, tu dois répondre UNIQUEMENT avec un objet JSON d'action, sans aucun texte autour, sans explication, sans balise Markdown, sans phrase d'introduction.More actions
+- Exemple : {"action":"delete-file","filePath":"/chemin/vers/fichier.js"}
+- Si l'utilisateur te demande de créer ou supprimer plusieurs fichiers/dossiers, réponds UNIQUEMENT avec un objet JSON de ce type :
+  { "action": "batch", "create": [ { "filePath": "...", "content": "" }, ... ], "delete": [ "chemin1", "chemin2", ... ] }
 - Réponds UNIQUEMENT avec un objet JSON d'action de ce type :
   {"action":"create-file","filePath":"/chemin/vers/install.md","content":"...documentation complète..."}
 - Ne mets aucun texte autour, aucune explication, aucune balise Markdown.
@@ -111,18 +115,7 @@ app.post('/explore', (req, res) => {
   }
 });
 
-app.post('/explore-file', (req, res) => {
-  const { filePath } = req.body;
-  if (!filePath) return res.status(400).json({ error: 'filePath requis' });
 
-  try {
-    const content = fs.readFileSync(filePath, 'utf8');
-    res.json({ content });
-  } catch (error) {
-    console.error("Erreur lors de la lecture du fichier :", error.message);
-    res.status(500).json({ error: 'Impossible de lire le fichier.' });
-  }
-});
 
 //  Créer fichier
 app.post('/create-file', (req, res) => {
@@ -304,6 +297,19 @@ app.post('/github-download', (req, res) => {
     console.log('Téléchargement réussi dans :', targetPath);
     return res.json({ projectPath: targetPath });
   });
+});
+
+app.post('/explore-file', (req, res) => {
+  const { filePath } = req.body;
+  if (!filePath) return res.status(400).json({ error: 'filePath requis' });
+
+  try {
+    const content = fs.readFileSync(filePath, 'utf8'); // Lit le contenu du fichier
+    res.json({ content });
+  } catch (error) {
+    console.error("Erreur lors de la lecture du fichier :", error.message);
+    res.status(500).json({ error: 'Impossible de lire le fichier.' });
+  }
 });
 
 const PORT = process.env.PORT || 3000;

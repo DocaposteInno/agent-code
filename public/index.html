@@ -109,6 +109,7 @@
       <button onclick="downloadFromGitHub()">Télécharger et explorer</button>
     </div>
 
+
     <!-- Affichage des arborescences -->
     <div class="section">
       <h3>Arborescence du projet principal :</h3>
@@ -117,6 +118,12 @@
     <div class="section">
       <h3>Arborescence du deuxième projet :</h3>
       <div id="secondTreeDisplay" class="tree-display"></div>
+    </div>
+
+ <!-- Section pour afficher le contenu d'un fichier -->
+    <div class="section">
+      <h3>Contenu du fichier :</h3>
+      <pre id="fileContent" class="tree-display"></pre>
     </div>
 
     <!-- Zone de chat avec l'IA -->
@@ -179,8 +186,8 @@
   renderTree(tree, document.getElementById('secondTreeDisplay'));
 }
 
-    function renderTree(node, container) {
-  if (!matchSearch(node)) return;
+   function renderTree(node, container) {
+  if (!matchSearch(node)) return; // Filtre les nœuds selon la recherche
 
   const ul = document.createElement('ul');
   const li = document.createElement('li');
@@ -188,9 +195,9 @@
   if (node.type === 'directory') {
     li.innerHTML = `<span class="folder">📁 ${node.name}</span>`;
     li.onclick = function (e) {
-      e.stopPropagation();
+      e.stopPropagation(); // Empêche la propagation du clic
       const children = this.querySelector('ul');
-      if (children) children.classList.toggle('hidden');
+      if (children) children.classList.toggle('hidden'); // Affiche/masque les enfants
     };
 
     if (node.children) {
@@ -205,15 +212,15 @@
   } else {
     li.innerHTML = `<span class="file">📄 ${node.name}</span>`;
     li.onclick = async function (e) {
-      e.stopPropagation();
+      e.stopPropagation(); // Empêche la propagation du clic
       try {
         const res = await fetch('/explore-file', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filePath: node.path })
+          body: JSON.stringify({ filePath: node.path }) // Envoie le chemin du fichier au backend
         });
         const data = await res.json();
-        document.getElementById('fileContent').textContent = data.content || "(Fichier vide)";
+        document.getElementById('fileContent').textContent = data.content || "(Fichier vide)"; // Affiche le contenu du fichier
       } catch (error) {
         console.error("Erreur lors de l'affichage du contenu du fichier :", error);
         alert("Impossible de charger le contenu du fichier.");
@@ -223,6 +230,9 @@
     container.appendChild(ul);
   }
 }
+
+ 
+  
 
     function matchSearch(node) {
       if (!searchQuery) return true;
