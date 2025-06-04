@@ -486,8 +486,16 @@
 
 // requete pour créer la documentation d'utilisation install.md
 async function createInstallDoc() {
-  const question = "Crée une documentation d'utilisation install.md pour ce projet.";
-  
+  const question = `
+Crée une documentation d'utilisation install.md pour ce projet. 
+Le contenu doit inclure une documentation complète pour démarrer ce projet Node.js : 
+- Prérequis
+- Installation
+- Configuration
+- Lancement
+- Dépannage
+`;
+
   try {
     const res = await fetch('/ask', {
       method: 'POST',
@@ -516,6 +524,7 @@ async function createInstallDoc() {
     alert("Une erreur est survenue.");
   }
 }
+
   </script>
 </body>
 </html>
